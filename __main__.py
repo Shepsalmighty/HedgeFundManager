@@ -12,13 +12,15 @@ chart = QChart()
 
 
 class Chart():
-    def __init__(self, stock):
+    def __init__(self, stock, window):
         self.chart = QChart()
         self.stock = stock
-        self.stock_series = self.stock.create_candles()
+        self.window = window
+        self.stock_series = self.stock.create_candles(self)
+
 
     def window(self, stock):
-        self.chart.addSeries(stock.create_candles())
+        self.chart.addSeries(self.stock_series)
         self.chart.setTitle(f"{stock.name} data from {stock.from_date}")
         self.chart.setAnimationOptions(QChart.SeriesAnimations)
 
@@ -53,6 +55,9 @@ class Chart():
 
         # add chart to a View and add anti-aliasing
         return QChartView(self.chart)  # chartView.setRenderHint(QPainter.Antialiasing)
+    def show_OHLC(self, Stock, index):
+        pass
+        # Stock.stock_series.QHoverEvent.connect(self.show_OHLC)
 
 """if you get to the mouse stuff, 
 u need to use the hover function and connect the hovering over the candlestickset with the window. 
@@ -74,7 +79,7 @@ class Stock():
         self.dates = [int(timestamp.timestamp()) for timestamp in self.stock_data.index]
 
     # importing yfinance data as floats to be used by candlestickSet series object
-    def create_candles(self):
+    def create_candles(self, main_window):
         stock_series = QCandlestickSeries()
         stock_series.setName(self.name)
         stock_series.setIncreasingColor(QColor(0, 255, 113, 255))
@@ -86,8 +91,11 @@ class Stock():
             candlestickSet.setHigh(self.highs[i])
             candlestickSet.setLow(self.lows[i])
             candlestickSet.setClose(self.closes[i])
-
             stock_series.append(candlestickSet)
+
+        #mouse-over event handler to show candlestick data
+            candlestickSet.hovered.connect(main_window.window.show_OHLC(candlestickSet, i))
+
         return stock_series
 
 
@@ -95,9 +103,10 @@ apple = Stock("AAPL", "2024-12-03", "2025-01-27")
 
 if __name__ == "__main__":
     # set chart to be central widget and set chart size
-    window.setCentralWidget(Chart(apple).window(apple))
+    window.setCentralWidget(Chart(apple, window).window(apple))
     window.resize(800, 600)
     window.show()
+
 
     sys.exit(app.exec())
 
