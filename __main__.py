@@ -1,14 +1,8 @@
-# import sys
-# import yfinance as yf
-# from PySide6 import Qt
-# from PySide6.QtCharts import QCandlestickSeries, QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
-# from PySide6.QtCore import Qt, QDateTime
-# from PySide6.QtGui import QColor, QPainter
-# from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QVBoxLayout, QLabel
 import sys
+
 import yfinance as yf
-from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtCharts import QCandlestickSeries, QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
+from PySide6.QtCore import Qt, QDateTime
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 
@@ -20,21 +14,24 @@ class Chart():
         self.stock_series = self.stock.create_candles(self)
         self.info_label = info_label
 
+    def create_view(self):
+        """displays the candlestick charts, and sets the legend, axes etc.
 
-    def window(self):
+        returns chart_view"""
+        #create chart window with X and Y axis
         self.chart.addSeries(self.stock_series)
         self.chart.setTitle(f"{self.stock.name} data from {self.stock.from_date}")
         self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
 
-        # create axes and set range
+        # create X axis and set range
         x_axis = QDateTimeAxis()
         x_axis.setFormat("MMM-yy")
         x_axis.setTitleText("Date")
 
-
         min_date = QDateTime.fromSecsSinceEpoch(self.stock.dates[0] // 1000)  # this function expects milliseconds
         max_date = QDateTime.fromSecsSinceEpoch(self.stock.dates[-1] // 1000)
 
+        #adds 1 day to start and end so candlesticks don't go up to the borders (visually more pleasing)
         min_date = min_date.addSecs(-3600 * 24)
         max_date = max_date.addSecs(3600 * 24)
 
@@ -56,10 +53,12 @@ class Chart():
 
         # Create and return chart view
         chart_view = QChartView(self.chart)
+        #adding antialiasing
         chart_view.setRenderHint(QPainter.Antialiasing)
-        # add chart to a View and add anti-aliasing
+
         return chart_view
 
+    # creating label when candle stick is moused-over
     def update_label(self, hovered, candlestick_set, index):
         if hovered:
             date = QDateTime.fromMSecsSinceEpoch(self.stock.dates[index]).toString("yyyy-MM-dd")
@@ -68,9 +67,11 @@ class Chart():
             high = candlestick_set.high()
             low = candlestick_set.low()
 
-            self.info_label.setText(f"Date: {date} | Open: {open_price:.2f} | Close: {close_price:.2f} | High: {high:.2f} | Low: {low:.2f}")
+            self.info_label.setText(
+                f"Date: {date} | Open: {open_price:.2f} | Close: {close_price:.2f} | High: {high:.2f} | Low: {low:.2f}")
         else:
             self.info_label.setText("Hover over a candlestick to see details")
+
 
 class Stock():
     def __init__(self, ticker, from_date, to_date):
@@ -84,16 +85,16 @@ class Stock():
         self.highs = self.stock_data['High'].tolist()
         self.lows = self.stock_data['Low'].tolist()
         self.closes = self.stock_data['Close'].tolist()
-        #INFO self.dates int was prev float() but caused issues as a chart func requires ints
-
+        # INFO self.dates int was prev float() but caused issues as a chart func requires ints
 
         self.dates = [int(timestamp.timestamp() * 1000) for timestamp in self.stock_data.index]  # Convert to milliseconds
-        # self.dates = [int(timestamp.timestamp()) for timestamp in self.stock_data.index]
+
 
     # importing yfinance data as floats to be used by candlestickSet series object
     def create_candles(self, chart_window):
         stock_series = QCandlestickSeries()
         stock_series.setName(self.name)
+        #setting colour for bull/bear candles
         stock_series.setIncreasingColor(QColor(0, 255, 113, 255))
         stock_series.setDecreasingColor(QColor(218, 13, 79, 255))
 
@@ -101,20 +102,19 @@ class Stock():
         def create_hover_handler(cs, idx):
             def handler(hovered):
                 chart_window.update_label(hovered, cs, idx)
-            return handler
-    # def handler(self, hovered):
-    #     chart_window.update_label(hovered, cs, idx)
-    #         # return handler
 
+            return handler
+
+        #grabs individual candlestick data from our candlestick series to create candlestick chart
         for i in range(len(self.dates)):
             candlestickSet = QCandlestickSet(self.dates[i])
             candlestickSet.setOpen(self.opens[i])
             candlestickSet.setHigh(self.highs[i])
             candlestickSet.setLow(self.lows[i])
             candlestickSet.setClose(self.closes[i])
-            # stock_series.append(candlestickSet)
 
-        #mouse-over event handler to show candlestick data
+
+            # connecting mouse-over event to hover handler to show candlestick data
             candlestickSet.hovered.connect(create_hover_handler(candlestickSet, i))
             stock_series.append(candlestickSet)
 
@@ -122,36 +122,29 @@ class Stock():
 
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
     window = QMainWindow()
     stock = Stock("AAPL", "2024-12-03", "2025-01-27")
-    print(stock.dates[0])
     central_widget = QWidget()
-    layout = QVBoxLayout()
 
     info_label = QLabel("Hover over a candlestick to see details")
     info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    layout.addWidget(Chart(stock, info_label).window())
+    # layout stacks the widgets vertically so our stock data is under the candlestick chart
+    layout = QVBoxLayout()
+    #adding chart_view to central widget
+    layout.addWidget(Chart(stock, info_label).create_view())
+    # feeding data into the second/lower (candlestick data) box
     layout.addWidget(info_label)
     central_widget.setLayout(layout)
 
-
     # set chart to be central widget and set chart size
-    # window.setCentralWidget(Chart(stock, window).window())
     window.setCentralWidget(central_widget)
     window.resize(800, 600)
     window.show()
 
-
     sys.exit(app.exec())
 
-# print(Stock("AAPL","2024-12-03", "2025-01-27").create_candles())
 
 
 
-#TODO
-# #1) DONEZO - Classify this whole shit
-# 2) Add mouse hover over (OHLC) + DONE add date x-axis
-# 3) play live data
