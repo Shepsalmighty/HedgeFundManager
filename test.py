@@ -10,7 +10,7 @@ from functools import partial
 
 
 
-def create_animation(steps: list[tuple[Callable[[], None], int]]):
+def run_animation(steps: list[tuple[Callable[[], None], int]]):
     """Tranq - Callable[[], None] takes no arguments and returns nothing
 
     stderr - def create_delayed_function( window ):
@@ -51,8 +51,13 @@ class Chart():
 
         new_candle = partial(self.stock.add_new_candle, window)
 
+        animation_list = []
+        for i in range(self.stock.index):
+            j = (i+1)*1000
+            animation_list.append((new_candle, j))
 
-        create_animation([(new_candle, 1000), (new_candle, 2000),(new_candle, 3000),(new_candle, 4000),(new_candle, 5000)])
+        run_animation(animation_list)
+        # run_animation([(new_candle, 1000),(new_candle, 2000),(new_candle, 3000)])
 
         # def single_candle():
         #     self.stock.add_new_candle(self)
