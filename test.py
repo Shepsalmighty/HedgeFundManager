@@ -6,13 +6,32 @@ from PySide6.QtCore import Qt, QDateTime, QTimer
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 from typing import Callable
+from functools import partial
 
 
 
 def create_animation(steps: list[tuple[Callable[[], None], int]]):
+    """Tranq - Callable[[], None] takes no arguments and returns nothing
+
+    stderr - def create_delayed_function( window ):
+                        def handler():
+                            add_new_handler( window )
+    this function takes one argument and makes a new function that doesn't take arguments,
+    but calls a function with the one argument given to create_delayed_function."""
+
     #TODO - this function should start a timer for each animation step using the corresponding delay
     for func, delay in steps:
-        pass
+
+        timer = QTimer()  # needs a Qobject and self.chart is one shrug emoji goes here
+        timer.singleShot(delay, func)
+
+
+
+#TODO - mess wid dis
+def create_argless_function(window):
+    def argless():
+        Stock.add_new_candle
+    return argless
 
 
 class Chart():
@@ -24,28 +43,22 @@ class Chart():
         self.info_label = info_label
 
 
-
-
-
     def create_view(self):
         """displays the candlestick charts, and sets the legend, axes etc.
 
         returns chart_view"""
         self.chart.addSeries(self.stock.stock_series)
 
-        def single_candle():
-            self.stock.add_new_candle(self)
-
-        timer = QTimer(self.chart) #needs a Qobject and self.chart is one shrug emoji goes here
-        timer.singleShot(5000, single_candle)
+        new_candle = partial(self.stock.add_new_candle, window)
 
 
+        create_animation([(new_candle, 1000), (new_candle, 2000),(new_candle, 3000),(new_candle, 4000),(new_candle, 5000)])
 
-
-
-
-
-
+        # def single_candle():
+        #     self.stock.add_new_candle(self)
+        # #
+        # timer = QTimer(self.chart) #needs a Qobject and self.chart is one shrug emoji goes here
+        # timer.singleShot(5000, single_candle)
 
         self.chart.setTitle(f"{self.stock.name} data from {self.stock.from_date}")
         self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
