@@ -9,29 +9,23 @@ from typing import Callable
 from functools import partial
 
 
+# def lower_and_upper_range(low, high):
+#     middle = (low + high) /2
+#     half_span = (high - low) /2
+#     new_half_span = half_span * 1.001
+#     lower = middle - new_half_span
+#     upper = middle + new_half_span
+#
+#     return lower, upper
+#
+# print(lower_and_upper_range(69, 420))
 
 def run_animation(steps: list[tuple[Callable[[], None], int]]):
-    """Tranq - Callable[[], None] takes no arguments and returns nothing
-
-    stderr - def create_delayed_function( window ):
-                        def handler():
-                            add_new_handler( window )
-    this function takes one argument and makes a new function that doesn't take arguments,
-    but calls a function with the one argument given to create_delayed_function."""
-
-    #TODO - this function should start a timer for each animation step using the corresponding delay
+    """Tranq - Callable[[], None] takes no arguments and returns nothing"""
     for func, delay in steps:
 
-        timer = QTimer()  # needs a Qobject and self.chart is one shrug emoji goes here
+        timer = QTimer()
         timer.singleShot(delay, func)
-
-
-
-#TODO - mess wid dis
-def create_argless_function(window):
-    def argless():
-        Stock.add_new_candle
-    return argless
 
 
 class Chart():
@@ -49,21 +43,21 @@ class Chart():
         returns chart_view"""
         self.chart.addSeries(self.stock.stock_series)
 
+#TODO newly generated candlesticks do not have hover-over data
+        #creating a arg-less function using partial as run_animation() cannot take funcs with args
         new_candle = partial(self.stock.add_new_candle, window)
 
-        animation_list = []
-        for i in range(self.stock.index):
-            j = (i+1)*1000
-            animation_list.append((new_candle, j))
+        # #creating the list of steps to pass to run_animation() using the loop below
+        # animation_list = []
+        # for i in range(self.stock.index):
+        #     j = (i+1)*1000
+        #     animation_list.append((new_candle, j))
+        #
+        #     if yaxis_upper_range < stock.candlstick_high:
+        #         yaxis_upper_range = stock.candlstick_high
+        #
+        # run_animation(animation_list)
 
-        run_animation(animation_list)
-        # run_animation([(new_candle, 1000),(new_candle, 2000),(new_candle, 3000)])
-
-        # def single_candle():
-        #     self.stock.add_new_candle(self)
-        # #
-        # timer = QTimer(self.chart) #needs a Qobject and self.chart is one shrug emoji goes here
-        # timer.singleShot(5000, single_candle)
 
         self.chart.setTitle(f"{self.stock.name} data from {self.stock.from_date}")
         self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
@@ -86,15 +80,46 @@ class Chart():
         self.chart.addAxis(x_axis, Qt.AlignmentFlag.AlignBottom)
         self.stock.stock_series.attachAxis(x_axis)
 
+        def lower_and_upper_range(low, high):
+            middle = (low + high) / 2
+            half_span = (high - low) / 2
+            new_half_span = half_span * 1.001
+            lower = middle - new_half_span
+            upper = middle + new_half_span
+            print(low, high, lower, upper)
+            return lower, upper
+
+        yaxis_lower_range, yaxis_upper_range = lower_and_upper_range(self.stock.candlestick_low, self.stock.candlestick_high)
+
+#TODO update yaxis ranges as new candles are printed
+        # yaxis_lower_range = min(self.stock.lows) - 5
+        # yaxis_upper_range = 300
+
         y_axis = QValueAxis()
         y_axis.setTitleText("Stock Price")
         y_axis.setLabelFormat("%.2f")
+        y_axis.setRange((yaxis_lower_range), (yaxis_upper_range + 5))
         self.chart.addAxis(y_axis, Qt.AlignmentFlag.AlignLeft)
         self.stock.stock_series.attachAxis(y_axis)
 
         # make chart legend visible and place at bottom
         self.chart.legend().setVisible(True)
         self.chart.legend().setAlignment(Qt.AlignmentFlag.AlignBottom)
+
+        # creating the list of steps to pass to run_animation() using the loop below
+        animation_list = []
+        for i in range(self.stock.index):
+            j = (i + 1) * 1000
+            animation_list.append((new_candle, j))
+
+            if yaxis_upper_range < self.stock.candlestick_high:
+                yaxis_upper_range = self.stock.candlestick_high
+            if yaxis_lower_range > self.stock.candlestick_low:
+                yaxis_lower_range = self.stock.candlestick_low
+
+        run_animation(animation_list)
+
+
 
         # Create and return chart view
         chart_view = QChartView(self.chart)
@@ -136,6 +161,8 @@ class Stock():
 
         self.dates = [int(timestamp.timestamp() * 1000) for timestamp in self.stock_data.index]  # Convert to milliseconds
         self.index = 0
+        self.candlestick_high = 0
+        self.candlestick_low = 694200000000
 
     # importing yfinance data as floats to be used by candlestickSet series object
     def create_candles(self, chart_window):
@@ -148,7 +175,6 @@ class Stock():
         #creates the initial chart data - currently set to 30 candles and increments self.index by same
         for i in range(30):
             self.add_new_candle(chart_window)
-
 
 
     def add_new_candle(self, chart_window):
@@ -170,6 +196,26 @@ class Stock():
             candlestickSet.hovered.connect(create_hover_handler(candlestickSet, self.index))
             self.stock_series.append(candlestickSet)
             self.index += 1
+
+        #TODO - rework below to scan for high and low in a more stderr approved way
+            """So we need to keep track of what parts of self.highs/lows/opens/closes 
+            we have added to the stock_series set and then that part of 
+            self.highs/lows to get the candlestick_high/_low"""
+            if self.highs[self.index] > self.candlestick_high:
+                self.candlestick_high = self.highs[self.index]
+            if self.lows[self.index] < self.candlestick_low:
+                self.candlestick_low = self.lows[self.index] - 5
+
+            # self.candlestick_high = self.stock_series[0].high
+            # self.candlestick_low = self.stock_series[0].low
+            #
+            # for i in range(len(self.stock_series)-1):
+            #     if self.candlestick_low < self.stock_series[i + 1].low:
+            #         self.candlestick_low = self.stock_series[i + 1].low
+            #
+            #     if self.candlestick_high > self.stock_series[i+1].high:
+            #         self.candlestick_high = self.stock_series[i+1].high
+
 
 
 if __name__ == "__main__":
