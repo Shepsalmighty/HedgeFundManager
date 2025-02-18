@@ -21,10 +21,15 @@ class Chart():
     def __init__(self, stock, info_label, window):
         self.chart = QChart()
         self.stock = stock
-        #create starting candle stick data
-        self.create_candles(self)
         self.info_label = info_label
         self.window = window
+        self.candles_on_screen = 0
+        self.candlestick_high = self.stock.highs[0]
+        self.candlestick_low = self.stock.lows[0]
+        self.yaxis_lower_range = 0
+        self.yaxis_upper_range = 0
+        # create starting candle stick data of 30 candles - line 43
+        self.create_candles(self)
 
     def create_candles(self, chart_window):
 
@@ -45,7 +50,7 @@ class Chart():
             new_half_span = half_span * 1.001
             lower = middle - new_half_span
             upper = middle + new_half_span
-            print(low, high, lower, upper)
+            # print(low, high, lower, upper)
             return lower, upper
 
         # Helper function to create a hover handler without using a lambda
@@ -65,23 +70,22 @@ class Chart():
             candlestickSet.hovered.connect(create_hover_handler(candlestickSet, self.stock.index))
             self.stock.stock_series.append(candlestickSet)
             self.stock.index += 1
+            if self.candles_on_screen < 25:
+                self.candles_on_screen += 1
 
-            self.stock.candlestick_high = self.stock.highs[0]
-            self.stock.candlestick_low = self.stock.lows[0]
+            self.candlestick_high = self.stock.highs[self.stock.index - self.candles_on_screen]
+            self.candlestick_low = self.stock.lows[self.stock.index - self.candles_on_screen]
 
-            for i in range(len(self.stock.dates) - 1):
-                if self.stock.candlestick_low < self.stock.lows[i + 1]:
-                    self.stock.candlestick_low = self.stock.lows[i + 1]
+            for i in range(self.candles_on_screen - 1):
+                if self.candlestick_low < self.stock.lows[(self.stock.index - self.candles_on_screen) + i + 1]:
+                    self.candlestick_low = self.stock.lows[(self.stock.index - self.candles_on_screen) + i + 1]
 
-                if self.stock.candlestick_high > self.stock.highs[i + 1]:
-                    self.stock.candlestick_high = self.stock.highs[i + 1]
+                if self.candlestick_high > self.stock.highs[(self.stock.index - self.candles_on_screen) + i + 1]:
+                    self.candlestick_high = self.stock.highs[(self.stock.index - self.candles_on_screen) + i + 1]
 
-#info stderr_dk:
-# You need to know which candlesticks you're showing and do min/max of those and only those.
-# Then run my lower_and_upper_range function.
+            self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
+                                                                                    self.candlestick_high)
 
-            self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.stock.candlestick_low,
-                                                                                    self.stock.candlestick_high)
 
     def create_view(self):
         """displays the candlestick charts, and sets the legend, axes etc.
@@ -119,7 +123,7 @@ class Chart():
         y_axis = QValueAxis()
         y_axis.setTitleText("Stock Price")
         y_axis.setLabelFormat("%.2f")
-        y_axis.setRange(yaxis_lower_range, (yaxis_upper_range + 5))
+        y_axis.setRange(self.yaxis_lower_range, (self.yaxis_upper_range + 5))
         # y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
         self.chart.addAxis(y_axis, Qt.AlignmentFlag.AlignLeft)
         self.stock.stock_series.attachAxis(y_axis)
@@ -134,10 +138,10 @@ class Chart():
             j = (i + 1) * 1000
             animation_list.append((new_candle, j))
 
-            if yaxis_upper_range < self.stock.candlestick_high:
-                yaxis_upper_range = self.stock.candlestick_high
-            if yaxis_lower_range > self.stock.candlestick_low:
-                yaxis_lower_range = self.stock.candlestick_low
+            # if self.yaxis_upper_range < self.stock.candlestick_high:
+            #     self.yaxis_upper_range = self.stock.candlestick_high
+            # if self.yaxis_lower_range > self.stock.candlestick_low:
+            #     self.yaxis_lower_range = self.stock.candlestick_low
 
         run_animation(animation_list)
 

@@ -17,6 +17,4 @@ class Stock():
         # INFO self.dates int was prev float() but caused issues as a chart func requires ints
         self.dates = [int(timestamp.timestamp() * 1000) for timestamp in self.stock_data.index]  # Convert to milliseconds
         self.index = 0
-        self.candlestick_high = 0
-        self.candlestick_low = 694200000000
-        # print(self.candlestick_low, self.candlestick_high)
+
