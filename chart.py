@@ -33,6 +33,7 @@ class Chart():
         self.create_candles(self)
 
 
+
     def create_candles(self, chart_window):
 
         self.stock.stock_series.setName(self.stock.name)
@@ -44,23 +45,24 @@ class Chart():
         for i in range(30):
             self.add_new_candle(chart_window)
 
+    # Helper function to create a hover handler without using a lambda
+    def create_hover_handler(self, cs, idx):
+        def handler(hovered):
+            # chart_window.update_label(hovered, cs, idx)
+            self.update_label(hovered, cs, idx)
+
+        return handler
+
     def add_new_candle(self, chart_window):
 
         def lower_and_upper_range(low, high):
             middle = (low + high) / 2
             half_span = (high - low) / 2
-            new_half_span = half_span * 1.005
+            new_half_span = half_span * 1.1
             lower = middle - new_half_span
             upper = middle + new_half_span
             # print(low, high, lower, upper)
             return lower, upper
-
-        # Helper function to create a hover handler without using a lambda
-        def create_hover_handler(cs, idx):
-            def handler(hovered):
-                chart_window.update_label(hovered, cs, idx)
-
-            return handler
 
         if self.stock.index < len(self.stock.dates):
             candlestickSet = QCandlestickSet(self.stock.dates[self.stock.index])
@@ -69,37 +71,17 @@ class Chart():
             candlestickSet.setLow(self.stock.lows[self.stock.index])
             candlestickSet.setClose(self.stock.closes[self.stock.index])
 
-            candlestickSet.hovered.connect(create_hover_handler(candlestickSet, self.stock.index))
+            candlestickSet.hovered.connect(self.create_hover_handler(candlestickSet, self.stock.index))
             self.stock.stock_series.append(candlestickSet)
             self.stock.index += 1
             if self.candles_on_screen < 25:
                 self.candles_on_screen += 1
 
-            self.candlestick_high = self.stock.highs[self.stock.index - self.candles_on_screen]
-            self.candlestick_low = self.stock.lows[self.stock.index - self.candles_on_screen]
+            self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
+            self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
 
-            for i in range(self.candles_on_screen - 1):
-                if self.candlestick_low < self.stock.lows[(self.stock.index - self.candles_on_screen) + i + 1]:
-                    self.candlestick_low = self.stock.lows[(self.stock.index - self.candles_on_screen) + i + 1]
-
-                if self.candlestick_high > self.stock.highs[(self.stock.index - self.candles_on_screen) + i + 1]:
-                    self.candlestick_high = self.stock.highs[(self.stock.index - self.candles_on_screen) + i + 1]
-
-            self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
-                                                                                    self.candlestick_high)
-
-#INFO we maybe setting the rect to an area outside of the plot
-            ''' I would also like to pint the values of the two QPointF's or the QRectF.'''
-            # y_axis = QValueAxis()
-            self.chart.setPlotArea(QRectF(QPointF(self.stock.dates[self.stock.index - self.candles_on_screen],
-                                                      self.yaxis_upper_range),
-                                               QPointF(self.stock.dates[self.stock.index - 1],
-                                               self.yaxis_lower_range)))
-            # print(QRectF(QPointF(self.stock.dates[self.stock.index - self.candles_on_screen],
-            #                                           self.yaxis_upper_range),
-            #                                    QPointF(self.stock.dates[self.stock.index - 1],
-            #                                    self.yaxis_lower_range)))
-
+            self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low, self.candlestick_high)
+            self.y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
 
 
     def create_view(self):
@@ -136,7 +118,6 @@ class Chart():
         self.y_axis = QValueAxis()
         self.y_axis.setTitleText("Stock Price")
         self.y_axis.setLabelFormat("%.2f")
-        "QRectF(const QPointF &topLeft, const QPointF &bottomRight)"
         # self.chart.setPlotArea(self, QRect(QPointF, self.yaxis_upper_range, QPointF, max_date))
         # self.y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
         self.chart.addAxis(self.y_axis, Qt.AlignmentFlag.AlignLeft)
@@ -151,12 +132,6 @@ class Chart():
         for i in range(self.stock.index):
             j = (i + 1) * 1000
             animation_list.append((new_candle, j))
-
-
-            # if self.yaxis_upper_range < self.stock.candlestick_high:
-            #     self.yaxis_upper_range = self.stock.candlestick_high
-            # if self.yaxis_lower_range > self.stock.candlestick_low:
-            #     self.yaxis_lower_range = self.stock.candlestick_low
 
         run_animation(animation_list)
 
