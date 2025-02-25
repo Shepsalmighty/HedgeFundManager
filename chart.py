@@ -14,7 +14,13 @@ def run_animation(steps: list[tuple[Callable[[], None], int]]):
 
 
 class Chart():
+
     def __init__(self, stock, info_label, window):
+        """
+        :param stock: stock data from yfinance - from ``stock.py``
+        :param window: inherited from ``__main__`` see QMainWindow
+        """
+
         self.chart = QChart()
         self.stock = stock
         self.info_label = info_label
