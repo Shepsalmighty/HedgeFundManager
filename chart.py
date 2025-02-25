@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCharts import QCandlestickSeries, QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
-from PySide6.QtCore import Qt, QDateTime, QTimer
+from PySide6.QtCore import Qt, QDateTime, QTimer, QRect, QPoint, QPointF, QRectF
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 from typing import Callable
@@ -28,8 +28,10 @@ class Chart():
         self.candlestick_low = self.stock.lows[0]
         self.yaxis_lower_range = 0
         self.yaxis_upper_range = 0
+        self.y_axis = QValueAxis()
         # create starting candle stick data of 30 candles - line 43
         self.create_candles(self)
+
 
     def create_candles(self, chart_window):
 
@@ -47,7 +49,7 @@ class Chart():
         def lower_and_upper_range(low, high):
             middle = (low + high) / 2
             half_span = (high - low) / 2
-            new_half_span = half_span * 1.001
+            new_half_span = half_span * 1.005
             lower = middle - new_half_span
             upper = middle + new_half_span
             # print(low, high, lower, upper)
@@ -86,10 +88,22 @@ class Chart():
             self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
                                                                                     self.candlestick_high)
 
+#INFO we maybe setting the rect to an area outside of the plot
+            ''' I would also like to pint the values of the two QPointF's or the QRectF.'''
+            # y_axis = QValueAxis()
+            self.chart.setPlotArea(QRectF(QPointF(self.stock.dates[self.stock.index - self.candles_on_screen],
+                                                      self.yaxis_upper_range),
+                                               QPointF(self.stock.dates[self.stock.index - 1],
+                                               self.yaxis_lower_range)))
+            # print(QRectF(QPointF(self.stock.dates[self.stock.index - self.candles_on_screen],
+            #                                           self.yaxis_upper_range),
+            #                                    QPointF(self.stock.dates[self.stock.index - 1],
+            #                                    self.yaxis_lower_range)))
+
+
 
     def create_view(self):
         """displays the candlestick charts, and sets the legend, axes etc.
-
         returns chart_view"""
         self.chart.addSeries(self.stock.stock_series)
 
@@ -119,14 +133,14 @@ class Chart():
         self.chart.addAxis(x_axis, Qt.AlignmentFlag.AlignBottom)
         self.stock.stock_series.attachAxis(x_axis)
 
-
-        y_axis = QValueAxis()
-        y_axis.setTitleText("Stock Price")
-        y_axis.setLabelFormat("%.2f")
-        y_axis.setRange(self.yaxis_lower_range, (self.yaxis_upper_range + 5))
-        # y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
-        self.chart.addAxis(y_axis, Qt.AlignmentFlag.AlignLeft)
-        self.stock.stock_series.attachAxis(y_axis)
+        self.y_axis = QValueAxis()
+        self.y_axis.setTitleText("Stock Price")
+        self.y_axis.setLabelFormat("%.2f")
+        "QRectF(const QPointF &topLeft, const QPointF &bottomRight)"
+        # self.chart.setPlotArea(self, QRect(QPointF, self.yaxis_upper_range, QPointF, max_date))
+        # self.y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
+        self.chart.addAxis(self.y_axis, Qt.AlignmentFlag.AlignLeft)
+        self.stock.stock_series.attachAxis(self.y_axis)
 
         # make chart legend visible and place at bottom
         self.chart.legend().setVisible(True)
@@ -137,6 +151,7 @@ class Chart():
         for i in range(self.stock.index):
             j = (i + 1) * 1000
             animation_list.append((new_candle, j))
+
 
             # if self.yaxis_upper_range < self.stock.candlestick_high:
             #     self.yaxis_upper_range = self.stock.candlestick_high
