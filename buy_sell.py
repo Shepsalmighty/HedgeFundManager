@@ -1,7 +1,7 @@
 from portfolio import Portfolio
 from stock import Stock
 
-class Buy_Sell:
+class BuySell:
     def __init__(self, stock):
         """
         :param stock: - from ``stock.py``
@@ -27,6 +27,8 @@ class Buy_Sell:
         self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
+
+
 
 
     def sell_to_close(self, trade_size):
@@ -61,7 +63,7 @@ class Buy_Sell:
 
 
 stock = Stock("GOOG", "2024-11-03", "2025-02-08")
-test_trade = Buy_Sell(stock)
+test_trade = BuySell(stock)
 
 test_trade.buy_to_open(50)
 
