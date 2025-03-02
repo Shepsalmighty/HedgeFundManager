@@ -3,11 +3,17 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 from chart import Chart
 from stock import Stock
+from game_state import GameState
 
 if __name__ == "__main__":
+
+    player_game_state = GameState('player_state.json')
+
     app = QApplication(sys.argv)
     window = QMainWindow()
-    my_stock = Stock("AAPL", "2024-11-03", "2025-02-08")
+    #TODO error handling for unknown tickers instead of breaking the program
+    # try to avoid exceptions and use monadic errors (tell what the error is instead of throwing the error)
+    my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
     central_widget = QWidget()
 
     info_label = QLabel("Hover over a candlestick to see details")
