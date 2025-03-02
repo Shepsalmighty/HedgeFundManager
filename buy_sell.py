@@ -1,7 +1,7 @@
 from portfolio import Portfolio
 from stock import Stock
 
-class Buy_Sell():
+class Buy_Sell:
     def __init__(self, stock):
         """
         :param stock: - from ``stock.py``
@@ -24,6 +24,7 @@ class Buy_Sell():
             return "Not enough money to place trade"
 
         self.portfolio.cash -= trade_cost
+        self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
 
@@ -55,7 +56,8 @@ class Buy_Sell():
         """
         pass
 
-#TODO add persistance json or sql db so that portfolio changes are saved and persistant
+#TODO add a json so that portfolio changes are saved and persistant
+#TODO add trade history
 
 
 stock = Stock("GOOG", "2024-11-03", "2025-02-08")
