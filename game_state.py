@@ -27,7 +27,6 @@ class GameState:
         #INFO every time you change something you modify self.__data, when the game is closed we call sync
         # any time you want to read/write you call get_synced_data
 
-        # self.__data = self.sync().read(self.file_path)
         if not self.__data:
             self.sync()
         return self.__data
@@ -48,20 +47,6 @@ class GameState:
             self.__write()
             self.__starting_data = deepcopy(self.__data)
 
-    def update(self):
-        #info from Sora on last stream
-        def __update(self, new_data):
-            if self.__data:
-                tmp_dict = self.__data
-                for k, v in new_data.items():  # k(ey), v(alue)
-                    tmp_dict[k] = v
-
-                self.__data = tmp_dict
-            else:
-                self.__data = new_data
-
-            self.__write()
-
 
     def __read(self):
         if os.path.exists(self.file_path):
@@ -71,9 +56,6 @@ class GameState:
             empty_dict = {}
             with open(self.file_path, "w") as outfile:
                 json.dump(empty_dict, outfile)
-
-#INFO what you want to do: 1. grab json data 2. create a dict from that data
-# 3. update json keys as wanted 4. save new json into file
 
 
     def __write(self):
