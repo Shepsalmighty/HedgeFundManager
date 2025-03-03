@@ -1,6 +1,7 @@
 import json
 from typing import Any
 import os
+from copy import deepcopy
 """
     #creates a new game-state synced with the file.json
     >>> game_state = GameState("path/to/file.json")
@@ -37,15 +38,15 @@ class GameState:
         If the object loaded the json file and was modified, it will store the changes in the json file"""
 
         if not self.__data:
+            # myvar = self.__read()
             self.__data = self.__read()
-            self.__starting_data = self.__data
+            self.__starting_data = deepcopy(self.__data)
 
         #if changes have been made (our data is different to when we started) write to json
         if self.__starting_data != self.__data:
-            #TODO != only does a shallow comparison and doesn't keep track of changes YOU NEED TO GOOGLE THIS NEXT
-            # STREAM
+            # self.__data = self.portfolio
             self.__write()
-            self.__starting_data = self.__data
+            self.__starting_data = deepcopy(self.__data)
 
     def update(self):
         #info from Sora on last stream

@@ -1,15 +1,17 @@
 from portfolio import Portfolio
 from stock import Stock
+from game_state import GameState
 
 class BuySell:
-    def __init__(self, stock):
+    def __init__(self, stock, player_game_state):
         """
         :param stock: - from ``stock.py``
         :param int trade_size: number of shares of the underlying to buy
         :param in_trade: tracks if a trade is currently live
         """
-        self.portfolio = Portfolio()
+        self.portfolio = Portfolio(player_game_state)
         self.stock = stock
+        self.state = player_game_state
 
 
 #TODO add stop loss and TP
@@ -24,11 +26,11 @@ class BuySell:
             return "Not enough money to place trade"
 
         self.portfolio.cash -= trade_cost
-        self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
+        # self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
 
-
+        self.state.sync()
 
 
     def sell_to_close(self, trade_size):
@@ -36,6 +38,7 @@ class BuySell:
         close a sell position, on the given underlying locking in PnL
         """
         #not allowing players to sell more shares than they own
+        #TODO this return does not print, instead we get the standard portfolio string
         if trade_size > self.portfolio.holdings.get(self.stock.ticker.ticker, 0):
             return f"Can't sell that many shares you only have {self.portfolio.holdings.get(self.stock.ticker.ticker, 0)}"
 
@@ -43,6 +46,8 @@ class BuySell:
                                                       - trade_size)
 
         self.portfolio.cash += trade_size * self.stock.opens[self.stock.index]
+
+        self.state.sync()
 
 
 
@@ -63,8 +68,10 @@ class BuySell:
 
 
 stock = Stock("GOOG", "2024-11-03", "2025-02-08")
-test_trade = BuySell(stock)
+player_game_state = GameState('player_state.json')
 
-test_trade.buy_to_open(50)
+test_trade = BuySell(stock, player_game_state)
+
+test_trade.sell_to_close(200)
 
 print(test_trade.portfolio)
