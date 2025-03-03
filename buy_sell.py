@@ -63,7 +63,7 @@ class BuySell:
         """
         pass
 
-#TODO add a json so that portfolio changes are saved and persistant
+
 #TODO add trade history
 
 
@@ -73,5 +73,7 @@ player_game_state = GameState('player_state.json')
 test_trade = BuySell(stock, player_game_state)
 
 test_trade.sell_to_close(200)
-
-print(test_trade.portfolio)
+if test_trade.sell_to_close(2) is None:
+    print(test_trade.portfolio)
+else:
+    print(test_trade.sell_to_close(200))
