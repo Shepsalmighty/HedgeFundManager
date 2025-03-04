@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QInputDialog, QWidget
+
 from portfolio import Portfolio
 from stock import Stock
 from game_state import GameState
@@ -14,7 +16,10 @@ class BuySell:
         self.state = player_game_state
 
 
+
 #TODO add stop loss and TP
+
+
     def buy_to_open(self, trade_size):
         """
         open a buy position, on the given underlying - without Margin currently
@@ -30,8 +35,15 @@ class BuySell:
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
 
+        print(f"Bought {trade_size} shares")
+
         self.state.sync()
 
+    def sell_shares(self):
+        i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
+                                    "Order Size:", 0, 1, 100000000, 10)
+        if ok:
+            return i
 
     def sell_to_close(self, trade_size):
         """
@@ -73,7 +85,12 @@ player_game_state = GameState('player_state.json')
 test_trade = BuySell(stock, player_game_state)
 
 test_trade.sell_to_close(200)
-if test_trade.sell_to_close(2) is None:
-    print(test_trade.portfolio)
-else:
-    print(test_trade.sell_to_close(200))
+
+print(test_trade.portfolio)
+
+#TODO: add logic for the below that doesn't mess stuff up without this if block we won't be notified
+# that we can't sell more stock than we own
+# if test_trade.sell_to_close(2) is None:
+#     print(test_trade.portfolio)
+# else:
+#     print(test_trade.sell_to_close(200))

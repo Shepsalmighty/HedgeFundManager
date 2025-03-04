@@ -1,9 +1,25 @@
 import sys
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QPushButton, \
+    QMessageBox, QInputDialog
 from chart import Chart
 from stock import Stock
 from game_state import GameState
+from buy_sell import BuySell as Trade
+
+# def output():
+#     msgBox = QMessageBox()
+#     msgBox.setText("Order Size")
+#     msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+#     msgBox.setDefaultButton(QMessageBox.Ok)
+#     msgBox.exec()
+
+def buy_shares():
+    i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
+                                "Order Size:", 0, 1, 100000000, 10)
+    if ok:
+        return i
+
 
 if __name__ == "__main__":
 
@@ -14,8 +30,10 @@ if __name__ == "__main__":
     #TODO error handling for unknown tickers instead of breaking the program
     # try to avoid exceptions and use monadic errors (tell what the error is instead of throwing the error)
     my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
+    trade = Trade(my_stock, player_game_state)
     central_widget = QWidget()
 
+    #creating a second widget that will dispaly candlestick data
     info_label = QLabel("Hover over a candlestick to see details")
     info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -29,6 +47,27 @@ if __name__ == "__main__":
     # feeding data into the second/lower (candlestick data) box
     layout.addWidget(info_label)
     central_widget.setLayout(layout)
+
+    # add trade buttons
+    button_layout = QHBoxLayout()
+    buy_button = QPushButton("Buy")
+    # sell_button = QPushButton("Sell")
+    close_button = QPushButton("Close")
+    #formatting the button size with addStretch
+    button_layout.addStretch()
+    button_layout.addWidget(buy_button)
+    # button_layout.addWidget(sell_button)
+    button_layout.addWidget(close_button)
+
+    layout.addLayout(button_layout)
+
+    #add button signals when cliecked
+    #TODO dis vvvv
+    # buy_button.clicked.connect(trade.buy_to_open(buy_shares))
+    # sell_button.clicked.connect(output)
+    # close_button.clicked.connect(output)
+
+
 
     # set chart to be central widget and set chart size
     window.setCentralWidget(central_widget)
