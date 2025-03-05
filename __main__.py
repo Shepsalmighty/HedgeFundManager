@@ -6,6 +6,7 @@ from chart import Chart
 from stock import Stock
 from game_state import GameState
 from buy_sell import BuySell as Trade
+from portfolio import Portfolio
 
 # def output():
 #     msgBox = QMessageBox()
@@ -15,10 +16,18 @@ from buy_sell import BuySell as Trade
 #     msgBox.exec()
 
 def buy_shares():
-    i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
-                                "Order Size:", 0, 1, 100000000, 10)
+    i, ok = QInputDialog.getInt(central_widget, "Buy to Open",
+                                "Order Size:", 0, 0, 100000000, 10)
     if ok:
         return i
+    return 0
+
+def sell_shares():
+    i, ok = QInputDialog.getInt(central_widget, "Sell to Close",
+                                "Shares to Sell:", 0, 0, 100000000, 10)
+    if ok:
+        return i
+    return 0
 
 
 if __name__ == "__main__":
@@ -31,6 +40,7 @@ if __name__ == "__main__":
     # try to avoid exceptions and use monadic errors (tell what the error is instead of throwing the error)
     my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
     trade = Trade(my_stock, player_game_state)
+    cash = Portfolio(player_game_state)
     central_widget = QWidget()
 
     #creating a second widget that will dispaly candlestick data
@@ -51,7 +61,7 @@ if __name__ == "__main__":
     # add trade buttons
     button_layout = QHBoxLayout()
     buy_button = QPushButton("Buy")
-    # sell_button = QPushButton("Sell")
+    sell_button = QPushButton("Sell")
     close_button = QPushButton("Close")
     #formatting the button size with addStretch
     button_layout.addStretch()
@@ -61,11 +71,12 @@ if __name__ == "__main__":
 
     layout.addLayout(button_layout)
 
-    #add button signals when cliecked
+    #add button signals when clicked
     #TODO dis vvvv
-    # buy_button.clicked.connect(trade.buy_to_open(buy_shares))
-    # sell_button.clicked.connect(output)
-    # close_button.clicked.connect(output)
+    # buy_button.clicked.connect(trade.buy_to_open(buy_shares()))
+    buy_button.clicked.connect(lambda: trade.buy_to_open(buy_shares()))
+    # sell_button.clicked.connect(lambda: trade.sell_to_close(sell_shares()))
+    close_button.clicked.connect(lambda: trade.sell_to_close(sell_shares()))
 
 
 
