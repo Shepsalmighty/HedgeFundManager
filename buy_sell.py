@@ -24,11 +24,13 @@ class BuySell:
         """
         open a buy position, on the given underlying - without Margin currently
         """
+        if trade_size == 0:
+            return
 
         trade_cost = trade_size * self.stock.opens[self.stock.index]
 
         if self.portfolio.cash < trade_cost:
-            return "Not enough money to place trade"
+            return print("Not enough money to place trade")
 
         self.portfolio.cash -= trade_cost
         # self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
@@ -39,25 +41,25 @@ class BuySell:
 
         self.state.sync()
 
-    def sell_shares(self):
-        i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
-                                    "Order Size:", 0, 1, 100000000, 10)
-        if ok:
-            return i
 
     def sell_to_close(self, trade_size):
         """
         close a sell position, on the given underlying locking in PnL
         """
-        #not allowing players to sell more shares than they own
-        #TODO this return does not print, instead we get the standard portfolio string
+        if trade_size == 0:
+            return
+
+        # not allowing players to sell more shares than they own
         if trade_size > self.portfolio.holdings.get(self.stock.ticker.ticker, 0):
-            return f"Can't sell that many shares you only have {self.portfolio.holdings.get(self.stock.ticker.ticker, 0)}"
+            return print(f"Can't sell that many shares you only have {self.portfolio.holdings.get(self.stock.ticker.ticker, 0)}")
 
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       - trade_size)
 
         self.portfolio.cash += trade_size * self.stock.opens[self.stock.index]
+
+
+        print(f"Sold {trade_size} shares")
 
         self.state.sync()
 
@@ -75,6 +77,8 @@ class BuySell:
         """
         pass
 
+    def show_cash(self, ):
+        return round(self.portfolio.cash, 2)
 
 #TODO add trade history
 
