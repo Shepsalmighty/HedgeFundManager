@@ -24,30 +24,41 @@ class BuySell:
         """
         open a buy position, on the given underlying - without Margin currently
         """
-        if trade_size == 0:
+        if trade_size <= 0:
             return
+
+        commission_fee = trade_size * 0.05
+        if commission_fee < 2.5:
+            commission_fee = 2.5
 
         trade_cost = trade_size * self.stock.opens[self.stock.index]
 
         if self.portfolio.cash < trade_cost:
             return print("Not enough money to place trade")
 
-        self.portfolio.cash -= trade_cost
+        self.portfolio.cash -= trade_cost + commission_fee
         # self.portfolio.holdings['cash'] = round(self.portfolio.cash, 2)
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
 
-        print(f"Bought {trade_size} shares")
+        print(f"Bought {trade_size} shares\n{commission_fee} paid in commission")
 
         self.state.sync()
+
 
 
     def sell_to_close(self, trade_size):
         """
         close a sell position, on the given underlying locking in PnL
         """
-        if trade_size == 0:
+
+        if trade_size <= 0:
             return
+
+        commission_fee = trade_size * 0.05
+        if commission_fee < 2.5:
+            commission_fee = 2.5
+
 
         # not allowing players to sell more shares than they own
         if trade_size > self.portfolio.holdings.get(self.stock.ticker.ticker, 0):
@@ -56,12 +67,13 @@ class BuySell:
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       - trade_size)
 
-        self.portfolio.cash += trade_size * self.stock.opens[self.stock.index]
+        self.portfolio.cash += (trade_size * self.stock.opens[self.stock.index]) - commission_fee
 
 
-        print(f"Sold {trade_size} shares")
+        print(f"Sold {trade_size} shares\n{commission_fee} paid in commission")
 
         self.state.sync()
+
 
 
 
@@ -77,7 +89,7 @@ class BuySell:
         """
         pass
 
-    def show_cash(self, ):
+    def get_cash(self, ):
         return round(self.portfolio.cash, 2)
 
 #TODO add trade history
