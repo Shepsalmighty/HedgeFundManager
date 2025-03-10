@@ -8,6 +8,7 @@ from game_state import GameState
 from buy_sell import BuySell as Trade
 from portfolio import Portfolio
 
+
 # def output():
 #     msgBox = QMessageBox()
 #     msgBox.setText("Order Size")
@@ -16,75 +17,102 @@ from portfolio import Portfolio
 #     msgBox.exec()
 
 def buy_shares():
-    i, ok = QInputDialog.getInt(central_widget, "Buy to Open",
-                                "Order Size:", 0, 0, 100000000, 10)
+    i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
+                                "Order Size:", 0, 1, 100000000, 10)
     if ok:
         return i
-    return 0
+    return 0  # NEED SOME DEFAULT RETURN STATEMENT JUST IN CASE NOTHING IS RETURNED BUT I THINK SOMETHING IS RETURNED BUT JUST DO IT ANYWAYS
 
-def sell_shares():
-    i, ok = QInputDialog.getInt(central_widget, "Sell to Close",
-                                "Shares to Sell:", 0, 0, 100000000, 10)
-    if ok:
-        return i
-    return 0
+
+def on_buy_button_clicked(trade):
+    def inner():
+        trade_size = buy_shares()
+        if trade_size > 0:
+            trade.buy_to_open(trade_size)
+            # update on screen portfolio cash display
+            cash.setText(f"$$$ {trade.get_cash()}")
+        else:
+            print("Invalid or canceled trade size.")
+
+
+    return inner
+
+
+def on_sell_button_clicked(trade):
+    def inner():
+        trade_size = buy_shares()
+        if trade_size > 0:
+            trade.sell_to_close(trade_size)
+            #update on screen portfolio cash display
+            cash.setText(f"$$$ {trade.get_cash()}")
+        else:
+            print("Invalid or canceled trade size.")
+
+
+    return inner
+
+
+def on_close_button_clicked(trade):
+    def inner():
+        trade_size = buy_shares()
+        if trade_size > 0:
+            trade.close_position(trade_size)
+            # update on screen portfolio cash display
+            cash.setText(f"$$$ {trade.get_cash()}")
+        else:
+            print("Invalid or canceled trade size.")
+
+    return inner
 
 
 if __name__ == "__main__":
-
     player_game_state = GameState('player_state.json')
-
     app = QApplication(sys.argv)
     window = QMainWindow()
-    #TODO error handling for unknown tickers instead of breaking the program
-    # try to avoid exceptions and use monadic errors (tell what the error is instead of throwing the error)
-    my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
+
+    try:
+        my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
+    except Exception as e:
+        print(f"Error loading stock data: {e}")
+        sys.exit(1)
+
     trade = Trade(my_stock, player_game_state)
-    cash = Portfolio(player_game_state)
+    # money = Portfolio(player_game_state)
     central_widget = QWidget()
 
-    #creating a second widget that will dispaly candlestick data
+    layout = QVBoxLayout()
     info_label = QLabel("Hover over a candlestick to see details")
     info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    # layout stacks the widgets vertically so our stock data is under the candlestick chart
-    layout = QVBoxLayout()
-    #adding chart_view to central widget
-    mychart = Chart(my_stock, info_label, window)
-    layout.addWidget(mychart.create_view())
-    # layout.addWidget(Chart(stock, info_label).create_view())
+    cash = QLabel(f"$$$ {trade.get_cash()}")
+    cash.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    # feeding data into the second/lower (candlestick data) box
+    mychart = Chart(my_stock, info_label, window, cash)
+    chart_view = mychart.create_view()
+    layout.addWidget(cash)
+    layout.addWidget(chart_view)
     layout.addWidget(info_label)
-    central_widget.setLayout(layout)
 
-    # add trade buttons
+
     button_layout = QHBoxLayout()
     buy_button = QPushButton("Buy")
     sell_button = QPushButton("Sell")
     close_button = QPushButton("Close")
-    #formatting the button size with addStretch
     button_layout.addStretch()
     button_layout.addWidget(buy_button)
-    # button_layout.addWidget(sell_button)
+    button_layout.addWidget(sell_button)
     button_layout.addWidget(close_button)
-
     layout.addLayout(button_layout)
 
-    #add button signals when clicked
-    #TODO dis vvvv
-    # buy_button.clicked.connect(trade.buy_to_open(buy_shares()))
-    buy_button.clicked.connect(lambda: trade.buy_to_open(buy_shares()))
-    # sell_button.clicked.connect(lambda: trade.sell_to_close(sell_shares()))
-    close_button.clicked.connect(lambda: trade.sell_to_close(sell_shares()))
-
-
-
-    # set chart to be central widget and set chart size
+    central_widget.setLayout(layout)
     window.setCentralWidget(central_widget)
+
+    #connecting buy/sell/close functions to on screen button press
+    buy_button.clicked.connect(on_buy_button_clicked(trade))
+    sell_button.clicked.connect(on_sell_button_clicked(trade))
+    close_button.clicked.connect(on_close_button_clicked(trade))
+
     window.resize(800, 600)
     window.show()
-
-
 
     sys.exit(app.exec())

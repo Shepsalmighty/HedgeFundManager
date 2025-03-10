@@ -13,9 +13,9 @@ def run_animation(steps: list[tuple[Callable[[], None], int]]):
         timer.singleShot(delay, func)
 
 
-class Chart():
+class Chart:
 
-    def __init__(self, stock, info_label, window):
+    def __init__(self, stock, info_label, window, cash):
         """
         :param stock: stock data from yfinance - from ``stock.py``
         :param window: inherited from ``__main__`` see QMainWindow
@@ -23,6 +23,7 @@ class Chart():
 
         self.chart = QChart()
         self.stock = stock
+        self.cash = cash
         self.info_label = info_label
         self.window = window
         self.candles_on_screen = 0
@@ -78,6 +79,7 @@ class Chart():
 
             self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
             self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
+
 
             self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
                                                                                    self.candlestick_high)
@@ -149,3 +151,12 @@ class Chart():
                 f"Date: {date} | Open: {open_price:.2f} | Close: {close_price:.2f} | High: {high:.2f} | Low: {low:.2f}")
         else:
             self.info_label.setText("Hover over a candlestick to see details")
+
+    def cash_on_screen(self):
+        """
+       displays player cash in real time on main screen
+        """
+        pass
+
+    def sell_button(self):
+        pass
