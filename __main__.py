@@ -2,31 +2,42 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QPushButton, \
     QMessageBox, QInputDialog
+
+import chart
 from chart import Chart
 from stock import Stock
 from game_state import GameState
 from buy_sell import BuySell as Trade
 from portfolio import Portfolio
-
-
-# def output():
-#     msgBox = QMessageBox()
-#     msgBox.setText("Order Size")
-#     msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-#     msgBox.setDefaultButton(QMessageBox.Ok)
-#     msgBox.exec()
+import threading
 
 def buy_shares():
-    i, ok = QInputDialog.getInt(central_widget, "QInputDialog::getInt()",
+    order_box = QInputDialog
+    mychart.pause_animation.set()
+    i, ok = order_box.getInt(central_widget, "Buy to Open",
+                                "Order Size:", 0, 1, 100000000, 10)
+
+    # order_box.finished.connect(chart.pause_animation)
+
+    if ok:
+        mychart.pause_animation.clear()
+        return i
+    return 0
+
+def sell_shares():
+    order_box = QInputDialog
+    i, ok = order_box.getInt(central_widget, "Sell to Close",
                                 "Order Size:", 0, 1, 100000000, 10)
     if ok:
         return i
-    return 0  # NEED SOME DEFAULT RETURN STATEMENT JUST IN CASE NOTHING IS RETURNED BUT I THINK SOMETHING IS RETURNED BUT JUST DO IT ANYWAYS
-
+    return 0
 
 def on_buy_button_clicked(trade):
     def inner():
+        #trade_size becomes the return value of the order entered in the dialogue box
         trade_size = buy_shares()
+
+
         if trade_size > 0:
             trade.buy_to_open(trade_size)
             # update on screen portfolio cash display
@@ -40,7 +51,8 @@ def on_buy_button_clicked(trade):
 
 def on_sell_button_clicked(trade):
     def inner():
-        trade_size = buy_shares()
+        # trade_size becomes the return value of the order entered in the dialogue box
+        trade_size = sell_shares()
         if trade_size > 0:
             trade.sell_to_close(trade_size)
             #update on screen portfolio cash display
@@ -77,6 +89,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     trade = Trade(my_stock, player_game_state)
+
     # money = Portfolio(player_game_state)
     central_widget = QWidget()
 

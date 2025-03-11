@@ -3,14 +3,24 @@ from typing import Callable
 from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
 from PySide6.QtCore import Qt, QDateTime, QTimer
 from PySide6.QtGui import QColor, QPainter
+import threading
 
 
-def run_animation(steps: list[tuple[Callable[[], None], int]]):
-    """Callable[[], None] takes no arguments and returns nothing
-        takes our animation step (new candlesticks) and a time delay"""
-    for func, delay in steps:
-        timer = QTimer()
-        timer.singleShot(delay, func)
+class Animation:
+    def __init__(self, steps: list[tuple[Callable[[], None], int]]):
+        """Callable[[], None] takes no arguments and returns nothing
+                takes our animation step (new candlesticks) and a time delay"""
+        self.steps = steps
+        self.timer = QTimer()
+
+    def start(self):
+        for func, delay in self.steps:
+            # self.timer.start()
+            self.timer.singleShot(delay, func)
+    # def pause(self):
+    #     self.timer.stop()
+    # def resume(self):
+    #     self.timer.start()
 
 
 class Chart:
@@ -34,6 +44,9 @@ class Chart:
         self.y_axis = QValueAxis()
         # create starting candle stick data of 30 candles - line 43
         self.create_candles()
+        # event thread to stop/start candle stick animations while an order is being placed
+        self.pause_animation = threading.Event()
+
 
     def create_candles(self):
         self.stock.stock_series.setName(self.stock.name)
@@ -130,7 +143,7 @@ class Chart:
             j = (i + 1) * 1000
             animation_list.append((self.add_new_candle, j))
 
-        run_animation(animation_list)
+        Animation(animation_list).start()
 
         # Create and return chart view with antiailiasing
         chart_view = QChartView(self.chart)
@@ -152,11 +165,3 @@ class Chart:
         else:
             self.info_label.setText("Hover over a candlestick to see details")
 
-    def cash_on_screen(self):
-        """
-       displays player cash in real time on main screen
-        """
-        pass
-
-    def sell_button(self):
-        pass
