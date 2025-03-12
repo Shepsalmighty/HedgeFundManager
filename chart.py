@@ -1,3 +1,4 @@
+import time
 from typing import Callable
 
 from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
@@ -7,20 +8,60 @@ import threading
 
 
 class Animation:
-    def __init__(self, steps: list[tuple[Callable[[], None], int]]):
+    def __init__(self, steps: list[tuple[Callable[[], None], float]]):
         """Callable[[], None] takes no arguments and returns nothing
                 takes our animation step (new candlesticks) and a time delay"""
         self.steps = steps
-        self.timer = QTimer()
+        # self.timer = QTimer()
+        # self.pause_animation = threading.Event()
+        self.my_thread = None
+
+
+
+    def __run(self):
+        """ this function runs in the separate animation thread and actually executes things """
+        # where the sleep happens, loop that goes through all the steps and uses sleep() to ensure
+        # they are executed at the right time
+        for func, delay in self.steps:
+            time.sleep(delay)
+            #TODO this doens't sleep the correct amount of time right now
+            # (it's adding all the delays together see printout from test_code
+            func()
+
+
+
+
+    def join(self):
+        """ waits for the animation to complete or instantly returns if it is not started/running """
+        # joins threads once animation is completed
+        if self.my_thread:
+            self.my_thread.join()
+
+
 
     def start(self):
-        for func, delay in self.steps:
-            # self.timer.start()
-            self.timer.singleShot(delay, func)
-    # def pause(self):
+        """ starts a new thread that executes the specified steps at the right time """
+        # create a new thread that executes all the specified animation steps and store thread-handle
+        self.my_thread = threading.Thread(target=self.__run)
+       # start the animation thread
+        self.my_thread.start()
+
+
+    def pause(self):
+        """ pauses the timer thread that was started using the start() method
+        (if no timer is running, this method does nothing) """
+        pass
+        # self.pause_animation.set()
+    #     if self.pause_animation:
+    #         pass
     #     self.timer.stop()
-    # def resume(self):
-    #     self.timer.start()
+
+    def resume(self):
+        """resumes a paused timer thread as if it was exactly at the point in time that it was paused at
+        (does nothing if no paused timer thread exists)"""
+        pass
+        # self.pause_animation.clear()
+
 
 
 class Chart:
@@ -45,7 +86,7 @@ class Chart:
         # create starting candle stick data of 30 candles - line 43
         self.create_candles()
         # event thread to stop/start candle stick animations while an order is being placed
-        self.pause_animation = threading.Event()
+        self.animation = None
 
 
     def create_candles(self):
@@ -143,7 +184,16 @@ class Chart:
             j = (i + 1) * 1000
             animation_list.append((self.add_new_candle, j))
 
-        Animation(animation_list).start()
+
+        # for i in range(self.stock.index):
+        #     for func, delay in animation_list:
+        #         # self.timer.start()
+        #         j = (i + 1) * 1000
+        #         self.add_new_candle()
+        #         time.sleep(j)
+
+        self.animation = Animation(animation_list)
+        self.animation.start()
 
         # Create and return chart view with antiailiasing
         chart_view = QChartView(self.chart)
