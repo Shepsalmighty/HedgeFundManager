@@ -33,6 +33,8 @@ class BuySell:
 
         trade_cost = trade_size * self.stock.opens[self.stock.index]
 
+
+
         if self.portfolio.cash < trade_cost:
             return print("Not enough money to place trade")
 
@@ -41,7 +43,8 @@ class BuySell:
         self.portfolio.holdings[self.stock.ticker.ticker] = (self.portfolio.holdings.get(self.stock.ticker.ticker, 0)
                                                       + trade_size)
 
-        print(f"Bought {trade_size} shares\n{commission_fee} paid in commission")
+        print(f"Bought {trade_size} shares\n{commission_fee} paid in commission\n"
+              f"{self.portfolio.holdings}")
 
         self.state.sync()
 
@@ -69,8 +72,8 @@ class BuySell:
 
         self.portfolio.cash += (trade_size * self.stock.opens[self.stock.index]) - commission_fee
 
-
-        print(f"Sold {trade_size} shares\n{commission_fee} paid in commission")
+        print(f"Sold {trade_size} shares\n{commission_fee} paid in commission\n"
+              f"{self.portfolio.holdings}")
 
         self.state.sync()
 
@@ -89,20 +92,20 @@ class BuySell:
         """
         pass
 
+
+
     def get_cash(self, ):
         return round(self.portfolio.cash, 2)
 
 #TODO add trade history
 
-
-stock = Stock("GOOG", "2024-11-03", "2025-02-08")
-player_game_state = GameState('player_state.json')
-
-test_trade = BuySell(stock, player_game_state)
-
-test_trade.sell_to_close(200)
-
-print(test_trade.portfolio)
+#
+# stock = Stock("GOOG", "2024-11-03", "2025-02-08")
+# player_game_state = GameState('player_state.json')
+#
+# test_trade = BuySell(stock, player_game_state)
+#
+# print(test_trade.portfolio)
 
 #TODO: add logic for the below that doesn't mess stuff up without this if block we won't be notified
 # that we can't sell more stock than we own
