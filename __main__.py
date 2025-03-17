@@ -18,13 +18,15 @@ import threading
 def buy_shares():
     order_box = QInputDialog
     buy_button.pressed.connect(mychart.animation.pause())
+    print("foo")
     i, ok = order_box.getInt(central_widget, "Buy to Open",
-                                "Order Size:", 0, 1, 100000000, 10)
+                                "Order Size:", 0, 1, 1_000_000, 10)
 
-
-
+    print("bar")
+    mychart.animation.resume()
     if ok:
-        order_box.finished.connect(mychart.animation.resume())
+        print("baz")
+        # order_box.finished.connect(mychart.animation.resume())
         # mychart.pause_animation.clear()
         return i
     return 0
@@ -32,7 +34,7 @@ def buy_shares():
 def sell_shares():
     order_box = QInputDialog
     i, ok = order_box.getInt(central_widget, "Sell to Close",
-                                "Order Size:", 0, 1, 100000000, 10)
+                                "Order Size:", 0, 1, 1_000_000, 10)
     if ok:
         return i
     return 0
@@ -133,5 +135,8 @@ if __name__ == "__main__":
 
     window.resize(800, 600)
     window.show()
+
+    #TODO join threads from the animation
+    # mychart.animation.join() ???
 
     sys.exit(app.exec())

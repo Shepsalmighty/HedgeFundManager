@@ -15,6 +15,7 @@ class Animation:
         # self.timer = QTimer()
         # self.pause_animation = threading.Event()
         self.my_thread = None
+        self.my_event = None
 
 
 
@@ -22,12 +23,13 @@ class Animation:
         """ this function runs in the separate animation thread and actually executes things """
         # where the sleep happens, loop that goes through all the steps and uses sleep() to ensure
         # they are executed at the right time
+
         for func, delay in self.steps:
-            start_time = time.time()
+            # start_time = time.time()
             time.sleep(delay)
             #INFO now sleeps the correct amount of time - sleep being done in Animation not in test_code
             func()
-            print(round(time.time() - start_time, 2))
+            # print(round(time.time() - start_time, 2))
 
 
 
@@ -51,15 +53,19 @@ class Animation:
     def pause(self):
         """ pauses the timer thread that was started using the start() method
         (if no timer is running, this method does nothing) """
-        if self.my_thread:
-            self.my_thread.wait()
+        pass
+        # if self.my_thread:
+        #     #INFO first attempt at getting the god damn animation going again >.<
+        #     # self.my_event = threading.Event()
+        #     self.my_thread.wait()
 
 
     def resume(self):
         """resumes a paused timer thread as if it was exactly at the point in time that it was paused at
         (does nothing if no paused timer thread exists)"""
-        if self.my_thread:
-            self.my_thread.set()
+        pass
+        # if self.my_thread:
+        #     self.my_thread.set()
 
 
 
@@ -180,8 +186,9 @@ class Chart:
         # creating the list of steps to pass to run_animation() using the loop below
         animation_list = []
         for i in range(self.stock.index):
-            j = (i + 1) * 1000
-            animation_list.append((self.add_new_candle, j))
+            # j = (i + 1) * 1000
+            #set time interval to 1.5 sec instead of using J as J was increasing time interval exponentionally
+            animation_list.append((self.add_new_candle, 1.5))
 
 
         # for i in range(self.stock.index):
