@@ -5,22 +5,27 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QW
 
 import chart
 from chart import Chart
+from chart import Animation
 from stock import Stock
 from game_state import GameState
 from buy_sell import BuySell as Trade
 from portfolio import Portfolio
+
 import threading
+
+
 
 def buy_shares():
     order_box = QInputDialog
-    mychart.pause_animation.set()
+    buy_button.pressed.connect(mychart.animation.pause())
     i, ok = order_box.getInt(central_widget, "Buy to Open",
                                 "Order Size:", 0, 1, 100000000, 10)
 
-    # order_box.finished.connect(chart.pause_animation)
+
 
     if ok:
-        mychart.pause_animation.clear()
+        order_box.finished.connect(mychart.animation.resume())
+        # mychart.pause_animation.clear()
         return i
     return 0
 
@@ -83,6 +88,7 @@ if __name__ == "__main__":
     window = QMainWindow()
 
     try:
+        #TODO - figure out why animation doesn't play to end if from date is e.g. 2024-09-03
         my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
     except Exception as e:
         print(f"Error loading stock data: {e}")

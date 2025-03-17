@@ -23,10 +23,11 @@ class Animation:
         # where the sleep happens, loop that goes through all the steps and uses sleep() to ensure
         # they are executed at the right time
         for func, delay in self.steps:
+            start_time = time.time()
             time.sleep(delay)
-            #TODO this doens't sleep the correct amount of time right now
-            # (it's adding all the delays together see printout from test_code
+            #INFO now sleeps the correct amount of time - sleep being done in Animation not in test_code
             func()
+            print(round(time.time() - start_time, 2))
 
 
 
@@ -50,17 +51,15 @@ class Animation:
     def pause(self):
         """ pauses the timer thread that was started using the start() method
         (if no timer is running, this method does nothing) """
-        pass
-        # self.pause_animation.set()
-    #     if self.pause_animation:
-    #         pass
-    #     self.timer.stop()
+        if self.my_thread:
+            self.my_thread.wait()
+
 
     def resume(self):
         """resumes a paused timer thread as if it was exactly at the point in time that it was paused at
         (does nothing if no paused timer thread exists)"""
-        pass
-        # self.pause_animation.clear()
+        if self.my_thread:
+            self.my_thread.set()
 
 
 
