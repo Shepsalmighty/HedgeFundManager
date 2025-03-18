@@ -17,24 +17,24 @@ import threading
 
 def buy_shares():
     order_box = QInputDialog
-    buy_button.pressed.connect(mychart.animation.pause())
-    print("foo")
+    mychart.animation.pause() #pause animation thread while order being placed
+    
     i, ok = order_box.getInt(central_widget, "Buy to Open",
                                 "Order Size:", 0, 1, 1_000_000, 10)
 
-    print("bar")
-    mychart.animation.resume()
+
+    mychart.animation.resume() #resume animation once order completed/canceled
     if ok:
-        print("baz")
-        # order_box.finished.connect(mychart.animation.resume())
-        # mychart.pause_animation.clear()
         return i
     return 0
 
 def sell_shares():
     order_box = QInputDialog
+    mychart.animation.pause() #pause animation thread while order being placed
     i, ok = order_box.getInt(central_widget, "Sell to Close",
                                 "Order Size:", 0, 1, 1_000_000, 10)
+
+    mychart.animation.resume() #resume animation once order completed/canceled
     if ok:
         return i
     return 0

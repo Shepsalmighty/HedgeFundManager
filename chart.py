@@ -14,8 +14,9 @@ class Animation:
         self.steps = steps
         # self.timer = QTimer()
         # self.pause_animation = threading.Event()
-        self.my_thread = None
-        self.my_event = None
+        self.thread = None
+        self.__pause_lock = threading.Lock()
+
 
 
 
@@ -23,49 +24,45 @@ class Animation:
         """ this function runs in the separate animation thread and actually executes things """
         # where the sleep happens, loop that goes through all the steps and uses sleep() to ensure
         # they are executed at the right time
-
         for func, delay in self.steps:
             # start_time = time.time()
             time.sleep(delay)
-            #INFO now sleeps the correct amount of time - sleep being done in Animation not in test_code
-            func()
-            # print(round(time.time() - start_time, 2))
-
-
+            #creating a lock/unlock cycle interrupted by pause() and resume() calls in buy window - pausing animation
+            with self.__pause_lock:
+                func()
 
 
     def join(self):
         """ waits for the animation to complete or instantly returns if it is not started/running """
         # joins threads once animation is completed
-        if self.my_thread:
-            self.my_thread.join()
-
-
+        if self.thread:
+            self.thread.join()
 
     def start(self):
         """ starts a new thread that executes the specified steps at the right time """
         # create a new thread that executes all the specified animation steps and store thread-handle
-        self.my_thread = threading.Thread(target=self.__run)
+        self.thread = threading.Thread(target=self.__run)
        # start the animation thread
-        self.my_thread.start()
+        self.thread.start()
 
 
     def pause(self):
         """ pauses the timer thread that was started using the start() method
         (if no timer is running, this method does nothing) """
-        pass
-        # if self.my_thread:
-        #     #INFO first attempt at getting the god damn animation going again >.<
-        #     # self.my_event = threading.Event()
-        #     self.my_thread.wait()
 
+        if self.thread:
+            self.__pause_lock.acquire()
+
+        # if self.thread:
+        # #INFO first attempt at getting the god damn animation going again >.<
+        #     self.pause.set()
 
     def resume(self):
         """resumes a paused timer thread as if it was exactly at the point in time that it was paused at
         (does nothing if no paused timer thread exists)"""
-        pass
-        # if self.my_thread:
-        #     self.my_thread.set()
+
+        if self.thread:
+            self.__pause_lock.release()
 
 
 
@@ -88,10 +85,11 @@ class Chart:
         self.yaxis_lower_range = 0
         self.yaxis_upper_range = 0
         self.y_axis = QValueAxis()
+        self.animation = None
         # create starting candle stick data of 30 candles - line 43
         self.create_candles()
         # event thread to stop/start candle stick animations while an order is being placed
-        self.animation = None
+
 
 
     def create_candles(self):
