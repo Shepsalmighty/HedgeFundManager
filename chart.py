@@ -1,8 +1,8 @@
 import time
 from typing import Callable
 
-from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis
-from PySide6.QtCore import Qt, QDateTime, QTimer
+from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis, QScatterSeries
+from PySide6.QtCore import Qt, QDateTime, QTimer, QPointF
 from PySide6.QtGui import QColor, QPainter
 import threading
 
@@ -11,11 +11,9 @@ class Animation:
     def __init__(self, steps: list[tuple[Callable[[], None], float]]):
         """Callable[[], None] takes no arguments and returns nothing
                 takes our animation step (new candlesticks) and a time delay"""
-        self.steps = steps
-        # self.timer = QTimer()
-        # self.pause_animation = threading.Event()
-        self.thread = None
-        self.__pause_lock = threading.Lock()
+        self.steps: list[tuple[Callable[[], None], float]] = steps
+        self.thread: threading.Thread | None = None
+        self.__pause_lock: threading.Lock = threading.Lock()
 
 
 
@@ -31,7 +29,6 @@ class Animation:
             with self.__pause_lock:
                 func()
 
-
     def join(self):
         """ waits for the animation to complete or instantly returns if it is not started/running """
         # joins threads once animation is completed
@@ -45,24 +42,19 @@ class Animation:
        # start the animation thread
         self.thread.start()
 
-
     def pause(self):
         """ pauses the timer thread that was started using the start() method
         (if no timer is running, this method does nothing) """
-
         if self.thread:
             self.__pause_lock.acquire()
-
-        # if self.thread:
-        # #INFO first attempt at getting the god damn animation going again >.<
-        #     self.pause.set()
 
     def resume(self):
         """resumes a paused timer thread as if it was exactly at the point in time that it was paused at
         (does nothing if no paused timer thread exists)"""
-
         if self.thread:
             self.__pause_lock.release()
+            #plot x, y for trade signal, stock.closes[index] stock.dates[self.index]????
+            # Stock.signal(Stock.dates[self.index], Stock.closes[self.index])
 
 
 
@@ -73,24 +65,24 @@ class Chart:
         :param stock: stock data from yfinance - from ``stock.py``
         :param window: inherited from ``__main__`` see QMainWindow
         """
-
-        self.chart = QChart()
+        #chart instance for candle sticks
+        self.chart: QChart = QChart()
+        #scatter instance to overlay trade entry/exits - NOW USING STOCK.SIGNALSERIES
+        # self.signal_: QScatterSeries = QScatterSeries()
         self.stock = stock
         self.cash = cash
         self.info_label = info_label
         self.window = window
-        self.candles_on_screen = 0
+        self.candles_on_screen: int = 0
         self.candlestick_high = self.stock.highs[0]
         self.candlestick_low = self.stock.lows[0]
         self.yaxis_lower_range = 0
         self.yaxis_upper_range = 0
-        self.y_axis = QValueAxis()
-        self.animation = None
+        self.y_axis: QValueAxis = QValueAxis()
+        # event thread to stop/start candle stick animations while an order is being placed
+        self.animation: Animation | None = None
         # create starting candle stick data of 30 candles - line 43
         self.create_candles()
-        # event thread to stop/start candle stick animations while an order is being placed
-
-
 
     def create_candles(self):
         self.stock.stock_series.setName(self.stock.name)
@@ -143,10 +135,16 @@ class Chart:
             #updates y_axis to the candle high/low of the currently shown candles
             self.y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
 
+    def signal(self, x, y):
+        self.stock.signal_series.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
+        self.stock.signal_series.setMarkerSize(25)
+        self.stock.signal_series.append(x, y)
+
     def create_view(self):
         """displays the candlestick charts, and sets the legend, axes etc.
         returns chart_view"""
         self.chart.addSeries(self.stock.stock_series)
+        self.chart.addSeries(self.stock.signal_series)
 
         self.chart.setTitle(f"{self.stock.name} data from {self.stock.from_date}")
         self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
@@ -170,12 +168,14 @@ class Chart:
         x_axis.setTickCount(7)
         self.chart.addAxis(x_axis, Qt.AlignmentFlag.AlignBottom)
         self.stock.stock_series.attachAxis(x_axis)
+        self.stock.signal_series.attachAxis(x_axis)
 
         self.y_axis = QValueAxis()
         self.y_axis.setTitleText("Stock Price")
         self.y_axis.setLabelFormat("%.2f")
         self.chart.addAxis(self.y_axis, Qt.AlignmentFlag.AlignLeft)
         self.stock.stock_series.attachAxis(self.y_axis)
+        self.stock.signal_series.attachAxis(self.y_axis)
 
         # make chart legend visible and place at bottom
         self.chart.legend().setVisible(True)
@@ -198,6 +198,14 @@ class Chart:
 
         self.animation = Animation(animation_list)
         self.animation.start()
+
+        # #set signal shape to triangle
+        # self.signal.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
+        # # self.signal.setColor(red)
+        # self.signal.append(QPointF(self.stock.dates[6], self.stock.closes[6]))
+        #
+        # print(self.stock.dates[5])
+        # self.chart.addSeries(self.signal)
 
         # Create and return chart view with antiailiasing
         chart_view = QChartView(self.chart)

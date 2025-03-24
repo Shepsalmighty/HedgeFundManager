@@ -18,13 +18,15 @@ import threading
 def buy_shares():
     order_box = QInputDialog
     mychart.animation.pause() #pause animation thread while order being placed
-    
+
     i, ok = order_box.getInt(central_widget, "Buy to Open",
                                 "Order Size:", 0, 1, 1_000_000, 10)
 
 
     mychart.animation.resume() #resume animation once order completed/canceled
+
     if ok:
+        mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
         return i
     return 0
 
@@ -35,7 +37,10 @@ def sell_shares():
                                 "Order Size:", 0, 1, 1_000_000, 10)
 
     mychart.animation.resume() #resume animation once order completed/canceled
+    # mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
+
     if ok:
+        mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
         return i
     return 0
 
@@ -75,7 +80,7 @@ def on_close_button_clicked(trade):
     def inner():
         trade_size = buy_shares()
         if trade_size > 0:
-            trade.close_position(trade_size)
+            trade.sell_to_close(trade_size)
             # update on screen portfolio cash display
             cash.setText(f"$$$ {trade.get_cash()}")
         else:
@@ -91,14 +96,13 @@ if __name__ == "__main__":
 
     try:
         #TODO - figure out why animation doesn't play to end if from date is e.g. 2024-09-03
-        my_stock = Stock("GOOG", "2024-11-03", "2025-02-08")
+        my_stock = Stock("AAPL", "2024-11-03", "2025-02-08")
     except Exception as e:
         print(f"Error loading stock data: {e}")
         sys.exit(1)
 
     trade = Trade(my_stock, player_game_state)
 
-    # money = Portfolio(player_game_state)
     central_widget = QWidget()
 
     layout = QVBoxLayout()
@@ -117,11 +121,11 @@ if __name__ == "__main__":
 
     button_layout = QHBoxLayout()
     buy_button = QPushButton("Buy")
-    sell_button = QPushButton("Sell")
+    #INFO shorting not implemented yet --- sell_button = QPushButton("Sell")
     close_button = QPushButton("Close")
     button_layout.addStretch()
     button_layout.addWidget(buy_button)
-    button_layout.addWidget(sell_button)
+    #INFO shorting not implemented yet --- button_layout.addWidget(sell_button)
     button_layout.addWidget(close_button)
     layout.addLayout(button_layout)
 
@@ -130,7 +134,7 @@ if __name__ == "__main__":
 
     #connecting buy/sell/close functions to on screen button press
     buy_button.clicked.connect(on_buy_button_clicked(trade))
-    sell_button.clicked.connect(on_sell_button_clicked(trade))
+    #INFO shorting not implemented yet --- sell_button.clicked.connect(on_sell_button_clicked(trade))
     close_button.clicked.connect(on_close_button_clicked(trade))
 
     window.resize(800, 600)
