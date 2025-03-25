@@ -117,6 +117,18 @@ class Chart:
             if self.candles_on_screen < 25:
                 self.candles_on_screen += 1
 
+#TODO: look at .remove() - not removing left most candles causing data to compress
+            if self.stock.index >= self.candles_on_screen:
+                oldcandlestick = QCandlestickSet(self.stock.dates[self.stock.index - self.candles_on_screen])
+                oldcandlestick.setOpen(self.stock.opens[self.stock.index - self.candles_on_screen])
+                oldcandlestick.setHigh(self.stock.highs[self.stock.index - self.candles_on_screen])
+                oldcandlestick.setLow(self.stock.lows[self.stock.index - self.candles_on_screen])
+                oldcandlestick.setClose(self.stock.closes[self.stock.index - self.candles_on_screen])
+
+                self.stock.stock_series.remove(oldcandlestick)
+                # self.stock.stock_series.remove(QCandlestickSet(
+                #     self.stock.dates[self.stock.index - self.candles_on_screen]))
+
             self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
             self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
 
@@ -174,7 +186,7 @@ class Chart:
         animation_list = []
         for i in range(len(self.stock.dates) - self.stock.index):
             #set time interval to 1.5 sec instead of using J as J was increasing time interval exponentionally
-            animation_list.append((self.add_new_candle, 1.5))
+            animation_list.append((self.add_new_candle, 0.5))
 
         self.animation = Animation(animation_list)
         self.animation.start()

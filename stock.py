@@ -31,11 +31,4 @@ class Stock:
         self.dates = [int(timestamp.timestamp() * 1000) for timestamp in self.stock_data.index]  # Convert to milliseconds
         self.index = 0
 
-        # self.buy_signal_series.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
-        # self.buy_signal_series.setColor(QColor(0, 255, 113, 255))
-        # self.buy_signal_series.setMarkerSize(20)
-
-        # self.sell_signal_series.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
-        # self.sell_signal_series.setColor(QColor(255, 42, 69, 255))
-        # self.sell_signal_series.setMarkerSize(20)
 

@@ -90,7 +90,7 @@ if __name__ == "__main__":
     window = QMainWindow()
 
     try:
-        my_stock = Stock("AAPL", "2024-11-03", "2025-02-08")
+        my_stock = Stock("AAPL", "2024-09-03", "2025-02-08")
     except Exception as e:
         print(f"Error loading stock data: {e}")
         sys.exit(1)
