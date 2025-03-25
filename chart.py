@@ -15,19 +15,16 @@ class Animation:
         self.thread: threading.Thread | None = None
         self.__pause_lock: threading.Lock = threading.Lock()
 
-
-
-
     def __run(self):
         """ this function runs in the separate animation thread and actually executes things """
         # where the sleep happens, loop that goes through all the steps and uses sleep() to ensure
         # they are executed at the right time
         for func, delay in self.steps:
-            # start_time = time.time()
             time.sleep(delay)
             #creating a lock/unlock cycle interrupted by pause() and resume() calls in buy window - pausing animation
             with self.__pause_lock:
                 func()
+
 
     def join(self):
         """ waits for the animation to complete or instantly returns if it is not started/running """
@@ -53,9 +50,6 @@ class Animation:
         (does nothing if no paused timer thread exists)"""
         if self.thread:
             self.__pause_lock.release()
-            #plot x, y for trade signal, stock.closes[index] stock.dates[self.index]????
-            # Stock.signal(Stock.dates[self.index], Stock.closes[self.index])
-
 
 
 class Chart:
@@ -67,8 +61,6 @@ class Chart:
         """
         #chart instance for candle sticks
         self.chart: QChart = QChart()
-        #scatter instance to overlay trade entry/exits - NOW USING STOCK.SIGNALSERIES
-        # self.signal_: QScatterSeries = QScatterSeries()
         self.stock = stock
         self.cash = cash
         self.info_label = info_label
@@ -98,11 +90,9 @@ class Chart:
     def create_hover_handler(self, cs, idx):
         def handler(hovered):
             self.update_label(hovered, cs, idx)
-
         return handler
 
     def add_new_candle(self):
-
         # used to create the offset for our Y-axis upper and lower range candles see 76-78
         def lower_and_upper_range(low, high):
             middle = (low + high) / 2
@@ -129,22 +119,18 @@ class Chart:
             self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
             self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
 
-
             self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
                                                                                    self.candlestick_high)
             #updates y_axis to the candle high/low of the currently shown candles
             self.y_axis.setRange(self.yaxis_lower_range, self.yaxis_upper_range)
-
-    def signal(self, x, y):
-        self.stock.signal_series.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
-        self.stock.signal_series.setMarkerSize(25)
-        self.stock.signal_series.append(x, y)
+      
 
     def create_view(self):
         """displays the candlestick charts, and sets the legend, axes etc.
         returns chart_view"""
         self.chart.addSeries(self.stock.stock_series)
-        self.chart.addSeries(self.stock.signal_series)
+        self.chart.addSeries(self.stock.buy_signal_series)
+        self.chart.addSeries(self.stock.sell_signal_series)
 
         self.chart.setTitle(f"{self.stock.name} data from {self.stock.from_date}")
         self.chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
@@ -168,14 +154,16 @@ class Chart:
         x_axis.setTickCount(7)
         self.chart.addAxis(x_axis, Qt.AlignmentFlag.AlignBottom)
         self.stock.stock_series.attachAxis(x_axis)
-        self.stock.signal_series.attachAxis(x_axis)
+        self.stock.buy_signal_series.attachAxis(x_axis)
+        self.stock.sell_signal_series.attachAxis(x_axis)
 
         self.y_axis = QValueAxis()
         self.y_axis.setTitleText("Stock Price")
         self.y_axis.setLabelFormat("%.2f")
         self.chart.addAxis(self.y_axis, Qt.AlignmentFlag.AlignLeft)
         self.stock.stock_series.attachAxis(self.y_axis)
-        self.stock.signal_series.attachAxis(self.y_axis)
+        self.stock.buy_signal_series.attachAxis(self.y_axis)
+        self.stock.sell_signal_series.attachAxis(self.y_axis)
 
         # make chart legend visible and place at bottom
         self.chart.legend().setVisible(True)
@@ -184,28 +172,11 @@ class Chart:
         # creating the list of steps to pass to run_animation() using the loop below
         animation_list = []
         for i in range(self.stock.index):
-            # j = (i + 1) * 1000
             #set time interval to 1.5 sec instead of using J as J was increasing time interval exponentionally
             animation_list.append((self.add_new_candle, 1.5))
 
-
-        # for i in range(self.stock.index):
-        #     for func, delay in animation_list:
-        #         # self.timer.start()
-        #         j = (i + 1) * 1000
-        #         self.add_new_candle()
-        #         time.sleep(j)
-
         self.animation = Animation(animation_list)
         self.animation.start()
-
-        # #set signal shape to triangle
-        # self.signal.setMarkerShape(QScatterSeries.MarkerShapeTriangle)
-        # # self.signal.setColor(red)
-        # self.signal.append(QPointF(self.stock.dates[6], self.stock.closes[6]))
-        #
-        # print(self.stock.dates[5])
-        # self.chart.addSeries(self.signal)
 
         # Create and return chart view with antiailiasing
         chart_view = QChartView(self.chart)

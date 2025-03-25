@@ -1,5 +1,6 @@
 import sys
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout, QPushButton, \
     QMessageBox, QInputDialog
 
@@ -22,11 +23,10 @@ def buy_shares():
     i, ok = order_box.getInt(central_widget, "Buy to Open",
                                 "Order Size:", 0, 1, 1_000_000, 10)
 
-
     mychart.animation.resume() #resume animation once order completed/canceled
 
     if ok:
-        mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
+        my_stock.buy_signal_series.append(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
         return i
     return 0
 
@@ -37,10 +37,9 @@ def sell_shares():
                                 "Order Size:", 0, 1, 1_000_000, 10)
 
     mychart.animation.resume() #resume animation once order completed/canceled
-    # mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
 
     if ok:
-        mychart.signal(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
+        my_stock.sell_signal_series.append(my_stock.dates[my_stock.index], my_stock.closes[my_stock.index])
         return i
     return 0
 
@@ -48,15 +47,12 @@ def on_buy_button_clicked(trade):
     def inner():
         #trade_size becomes the return value of the order entered in the dialogue box
         trade_size = buy_shares()
-
-
         if trade_size > 0:
             trade.buy_to_open(trade_size)
             # update on screen portfolio cash display
             cash.setText(f"$$$ {trade.get_cash()}")
         else:
             print("Invalid or canceled trade size.")
-
 
     return inner
 
@@ -72,13 +68,12 @@ def on_sell_button_clicked(trade):
         else:
             print("Invalid or canceled trade size.")
 
-
     return inner
 
 
 def on_close_button_clicked(trade):
     def inner():
-        trade_size = buy_shares()
+        trade_size = sell_shares()
         if trade_size > 0:
             trade.sell_to_close(trade_size)
             # update on screen portfolio cash display
