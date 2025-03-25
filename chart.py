@@ -26,6 +26,7 @@ class Animation:
                 func()
 
 
+
     def join(self):
         """ waits for the animation to complete or instantly returns if it is not started/running """
         # joins threads once animation is completed
@@ -171,7 +172,7 @@ class Chart:
 
         # creating the list of steps to pass to run_animation() using the loop below
         animation_list = []
-        for i in range(self.stock.index):
+        for i in range(len(self.stock.dates) - self.stock.index):
             #set time interval to 1.5 sec instead of using J as J was increasing time interval exponentionally
             animation_list.append((self.add_new_candle, 1.5))
 
