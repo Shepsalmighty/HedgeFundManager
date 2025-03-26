@@ -1,4 +1,5 @@
 import time
+from collections import deque
 from typing import Callable
 
 from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis, QScatterSeries
@@ -68,6 +69,7 @@ class Chart:
         self.cash = cash
         self.info_label = info_label
         self.window = window
+        self.candle_deque = deque(maxlen=30)
         self.candles_on_screen: int = 0
         self.candlestick_high = self.stock.highs[0]
         self.candlestick_low = self.stock.lows[0]
@@ -118,7 +120,7 @@ class Chart:
             # print(low, high, lower, upper)
             return lower, upper
 
-        if self.stock.index < len(self.stock.dates):
+        if self.stock.index >= len(self.candle_deque):
             candlestickSet = QCandlestickSet(self.stock.dates[self.stock.index])
             candlestickSet.setOpen(self.stock.opens[self.stock.index])
             candlestickSet.setHigh(self.stock.highs[self.stock.index])
@@ -126,25 +128,26 @@ class Chart:
             candlestickSet.setClose(self.stock.closes[self.stock.index])
 
             candlestickSet.hovered.connect(self.create_hover_handler(candlestickSet, self.stock.index))
+
+            if len(self.candle_deque) == 30:
+                oldest_set = self.candle_deque.popleft()
+                self.stock.stock_series.remove(oldest_set)
+
+            self.candle_deque.append(candlestickSet)
             self.stock.stock_series.append(candlestickSet)
             self.stock.index += 1
             if self.candles_on_screen < 25:
                 self.candles_on_screen += 1
 
-            # TODO: look at .remove() - not removing left most candles causing data to compress
-            if self.stock.index >= self.candles_on_screen:
-                oldcandlestick = QCandlestickSet(self.stock.dates[self.stock.index - self.candles_on_screen])
-                oldcandlestick.setOpen(self.stock.opens[self.stock.index - self.candles_on_screen])
-                oldcandlestick.setHigh(self.stock.highs[self.stock.index - self.candles_on_screen])
-                oldcandlestick.setLow(self.stock.lows[self.stock.index - self.candles_on_screen])
-                oldcandlestick.setClose(self.stock.closes[self.stock.index - self.candles_on_screen])
 
-                self.stock.stock_series.remove(oldcandlestick)
-                # self.stock.stock_series.remove(QCandlestickSet(
-                #     self.stock.dates[self.stock.index - self.candles_on_screen]))
+            # self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
+            # self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
+            candle_high = [c.high() for c in self.candle_deque]
+            candle_low = [c.low() for c in self.candle_deque]
 
-            self.candlestick_high = max(self.stock.highs[self.stock.index - self.candles_on_screen:self.stock.index])
-            self.candlestick_low = min(self.stock.lows[self.stock.index - self.candles_on_screen:self.stock.index])
+            #if no values fetched from deque - 0 becomes default value
+            self.candlestick_high = max(candle_high) if candle_high else 0
+            self.candlestick_low = min(candle_low) if candle_low else 0
 
             self.yaxis_lower_range, self.yaxis_upper_range = lower_and_upper_range(self.candlestick_low,
                                                                                    self.candlestick_high)
