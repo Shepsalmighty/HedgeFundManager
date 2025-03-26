@@ -2,12 +2,14 @@ import time
 from typing import Callable
 
 from PySide6.QtCharts import QCandlestickSet, QChart, QChartView, QValueAxis, QDateTimeAxis, QScatterSeries
-from PySide6.QtCore import Qt, QDateTime, QTimer, QPointF
+from PySide6.QtCore import Qt, QDateTime, QObject, Signal
 from PySide6.QtGui import QColor, QPainter
 import threading
 
 
-class Animation:
+class Animation(QObject):
+    execute_step = Signal(object)
+
     def __init__(self, steps: list[tuple[Callable[[], None], float]]):
         """Callable[[], None] takes no arguments and returns nothing
                 takes our animation step (new candlesticks) and a time delay"""
@@ -15,6 +17,7 @@ class Animation:
         self.steps: list[tuple[Callable[[], None], float]] = steps
         self.thread1: threading.Thread | None = None
         self.__pause_lock: threading.Lock = threading.Lock()
+        self.execute_step.connect(lambda func: func())
 
     def __run(self):
         """ this function runs in the separate animation thread and actually executes things """
@@ -24,7 +27,7 @@ class Animation:
             time.sleep(delay)
             # creating a lock/unlock cycle interrupted by pause() and resume() calls in buy window - pausing animation
             with self.__pause_lock:
-                func()
+                self.execute_step.emit(func)
 
     def join(self):
         """ waits for the animation to complete or instantly returns if it is not started/running """
